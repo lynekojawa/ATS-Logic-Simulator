@@ -4,4 +4,7 @@ Here are the list of things to update.<br>
 1. stemming issue
 2. refactoring the files into three -constant, engine, ui
 3. scoring: skill_match and total overall score. <br>
-this will begin tomorrow (7/28) :D 
+this will begin tomorrow (7/28) :D
+   (7/28)<br>
+Recalibrating Orion, from left off. Plan is set.<br>
+1. dividing one files into three. 
