@@ -5,6 +5,10 @@ Here are the list of things to update.<br>
 2. refactoring the files into three -constant, engine, ui
 3. scoring: skill_match and total overall score. <br>
 this will begin tomorrow (7/28) :D
-   (7/28)<br>
+(7/28)<br>
 Recalibrating Orion, from left off. Plan is set.<br>
-1. dividing one files into three. 
+1. dividing one files into three.: worked on constants.py and scoring engine
+Orion needs to retrained, he started project with providing code. which is not ideal.
+and both podo-gemini and podo-gpt didn't detected it
+(7/29)<br>
+started with finishing: ui_dashboard.py file
