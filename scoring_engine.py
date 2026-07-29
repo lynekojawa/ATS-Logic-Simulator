@@ -74,7 +74,7 @@ def compute_ats_metrics(jd_text: str, resume_text: str) -> Dict[str, Any]:
         missing_keywords,
         key = lambda x: clean_jd_counts[x],
         reverse=True
-    )[:10]
+    )[:50]
 
     return {
         "match_score": match_score,

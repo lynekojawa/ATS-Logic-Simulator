@@ -3,6 +3,96 @@ constants.py
 Dedicated registry for fluff words, STEM exceptions, and string conversions.
 """
 
+GOVERNMENT_NOISE = {
+    "agency", "department", "federal", "government", "official", "office",
+    "management", "command", "directorate", "installation", "garrison", "service",
+    "services", "civilian", "competitive", "position", "positions", "announcement",
+    "summary", "overview", "organization", "program", "programs", "mission",
+    "authority", "authorities", "administration", "administrative", "public", "national",
+    "state", "states", "province", "provincial", "city", "local", "communities",
+    "community", "location", "locations", "site", "worksite", "overseas", "oconus",
+    "domestic", "foreign", "republic", "embassy"
+}
+
+LEGAL_NOISE = {
+    "accordance", "applicable", "eligibility", "eligible", "requirements", "requirement",
+    "required", "determination", "provisions", "provision", "regulation", "regulations",
+    "instruction", "instructions", "policy", "policies", "compliance", "comply",
+    "maintain", "maintained", "obtain", "obtaining", "subject", "condition",
+    "conditions", "authorization", "authorized", "qualify", "qualified", "qualification",
+    "qualifications", "documentation", "document", "documents", "proof", "criteria",
+    "selection", "selectee", "selected", "assessment", "assess", "review", "reviews",
+    "annual", "periodic", "duration"
+}
+
+RECRUITING_NOISE = {
+    "apply", "application", "applications", "applicant", "applicants", "appointment",
+    "appointments", "promotion", "promotions", "reassignment", "reassignments", "employment",
+    "employee", "employees", "employer", "career", "careers", "hiring", "hire",
+    "recruitment", "retention", "transition", "consideration", "considered", "vacancy",
+    "vacancies", "resume", "questionnaire", "interview", "candidate", "candidates",
+    "selection", "score", "referred", "manager", "supervisory", "probation", "grade",
+    "grades", "schedule", "series"
+}
+
+BENEFITS_NOISE = {
+    "salary", "benefits", "allowance", "allowances", "expenses", "expense",
+    "reimbursement", "travel", "telework", "remote", "deposit", "pay", "payment",
+    "payments", "leave", "quarters", "passport", "incentive", "incentives", "loan",
+    "repayment", "package", "packages", "hours", "hour", "fulltime", "parttime",
+    "permanent", "temporary"
+}
+
+HR_POLICY_NOISE = {
+    "complaints", "complaint", "grievance", "grievances", "guidance", "advice",
+    "counsel", "performance", "appraisal", "supervisor", "supervisors", "staff",
+    "staffing", "personnel", "person", "persons", "member", "members", "family",
+    "spouse", "spouses", "dependent", "dependents", "veteran", "veterans", "citizenship",
+    "citizen", "registration", "employment", "employments", "return", "rights",
+    "supporting", "support", "supports"
+}
+
+DOCUMENT_NOISE = {
+    "website", "url", "online", "click", "access", "visit", "information",
+    "additional", "details", "detail", "notice", "section", "pages", "page",
+    "response", "responses", "form", "report", "reports", "statement", "statements",
+    "address", "contact", "contacts", "questions", "question", "include", "including",
+    "provided", "provide", "provides", "submitted", "submit", "submission", "receive",
+    "received", "receives", "complete", "completed"
+}
+
+LOCATION_NOISE = {
+    "south", "korea", "seoul", "pyongtaek", "humphreys", "apo", "area", "areas",
+    "country", "countries", "location", "locations", "drive", "travel", "overseas",
+    "abroad", "foreign", "base", "bases", "installation", "headquarters"
+}
+
+
+ACTION_VERB_NOISE = {
+    "coordination", "coordinating", "planning", "plans", "managing", "manages",
+    "directing", "directs", "evaluating", "evaluation", "responsible", "responsibility",
+    "assigned", "assignment", "functions", "operations", "resources", "current",
+    "future", "quality", "effective", "efficient", "ensure", "ensures", "maintains",
+    "establishes", "develops", "implements", "performs", "serves", "include", "includes"
+}
+
+
+TECHNICAL_NOISE = {
+    "data", "source", "customer", "cloud", "build", "open", "system",
+    "related", "including", "solution", "tool", "using", "experience"
+}
+
+JOB_META_FLUFF = {
+    "year", "years", "none", "preferred", "manager", "minimum", "direct",
+    "qualification", "position", "hiring", "staffing", "paid", "professional",
+    "support", "help", "detail", "will", "careerscape", "ll", "re", "thi" # thi, re, ll 같은 유령 어근 추가
+}
+
+CYBER_DOMAIN_NOISE = {
+    "risk", "management", "governance", "cybersecurity", "financial",
+    "regulatory", "cyber", "chainguard", "alpaca"
+}
+
 GAME_JD_FLUFF = {
     "game", "games", "gaming", "play", "player", "players", "fun", "studio",
     "studios", "team", "teams", "work", "working", "join", "opportunity"
@@ -37,6 +127,17 @@ STOP_WORDS = {
     "yourself", "yourselves"
 }
 
+STOP_WORDS.update(GOVERNMENT_NOISE)
+STOP_WORDS.update(LEGAL_NOISE)
+STOP_WORDS.update(RECRUITING_NOISE)
+STOP_WORDS.update(BENEFITS_NOISE)
+STOP_WORDS.update(HR_POLICY_NOISE)
+STOP_WORDS.update(DOCUMENT_NOISE)
+STOP_WORDS.update(LOCATION_NOISE)
+STOP_WORDS.update(ACTION_VERB_NOISE)
+STOP_WORDS.update(TECHNICAL_NOISE)
+STOP_WORDS.update(JOB_META_FLUFF)
+STOP_WORDS.update(CYBER_DOMAIN_NOISE)
 STOP_WORDS.update(GAME_JD_FLUFF)
 STOP_WORDS.update(HR_LEGAL_FLUFF)
 

@@ -12,3 +12,8 @@ Orion needs to retrained, he started project with providing code. which is not i
 and both podo-gemini and podo-gpt didn't detected it
 (7/29)<br>
 started with finishing: ui_dashboard.py file
+Here is how I am going to update the engine, it is kinda hard to detect what's important<br>
+so I am going to make user to decide pick important section like qualification, duties <br>
+the basic global scoring will remain same but the reverse skill match will work as above stated<br>
+then missing words will from the from user decided area. <br> 
+GPT ran away ugh! for real? 
