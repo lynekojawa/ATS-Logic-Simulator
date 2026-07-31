@@ -5,22 +5,32 @@ Logic handling area sanitization, stemming calibration, and reverse-matching met
 
 import re
 from collections import Counter
-from typing import List, Set, Tuple, Dict, Any
+from typing import List, Dict, Any
 from pypdf import PdfReader
 from constants import STOP_WORDS, STEM_EXCLUSION, WORD_TO_NUM
 
+#updated 7/31
 def sanitize_text(raw_text: str) -> List[str]:
     """Tokenize and applies calibrated suffix-stripping without semantic drift"""
     clean_input = raw_text.lower()
-    word_list = re.split(r"[^a-zA-A0-9]+", clean_input)
+    word_list = re.findall(r'\b[a-z]{2,}\b', clean_input)
 
     stemmed_list: List[str] =[]
+
+    PROTECTED_SUFFIXES = ("ss", "is", "us", "as", "ce", "le", "me", "re", "de", "te", "ve", "ze", "ge", "pe", "ne", "ke", "fe", "ue")
+
     for word in word_list:
         if len(word) <2: continue
 
-        if word in STEM_EXCLUSION:
+        if word in STEM_EXCLUSION or len(word) <= 3:
             stemmed_list.append(word)
-        elif word.endswith("ies") and len(word) > 5:
+            continue
+
+        if word.endswith(PROTECTED_SUFFIXES):
+            stemmed_list.append(word)
+            continue
+
+        if word.endswith("ies") and len(word) > 5:
             stemmed_list.append(word[:-3] + "y")
         elif word.endswith("es") and not word.endswith("ses") and len(word) > 4:
             stemmed_list.append(word[:-2])
@@ -82,8 +92,51 @@ def compute_ats_metrics(jd_text: str, resume_text: str) -> Dict[str, Any]:
         "candidate_experience": extract_experience(resume_text),
         "missing_keywords": high_value_missing
     }
+#added 7/31
+def find_jd_headers(raw_text: str) -> List[str]:
+    lines =raw_text.split('\n')
+    headers = []
+    header_pattern = r"^[A-Z\s]{3,}:?$|^[A-Z][a-z]+(\s[A-Z][a-z]+)*:$"
 
+    for line in lines:
+        clean_line = line.strip()
+        if not clean_line: continue
 
+        word_count = len(clean_line.split())
+        char_count = len(clean_line)
 
+        if 1<= word_count <= 6 and char_count <= 50:
+            if re.match(header_pattern, clean_line):
+                headers.append(clean_line)
+    return headers
 
+def extract_signal_content(raw_text: str, selected_headers: List[str]) -> str:
+    if not selected_headers:
+        return raw_text
 
+    all_headers = find_jd_headers(raw_text)
+    combined_signal = ""
+
+    for target in selected_headers:
+        start_idx = raw_text.find(target)
+        if start_idx == -1: continue
+
+        content_start = start_idx + len(target)
+        rem_text = raw_text[content_start:]
+        next_header_indices = []
+        for h in all_headers:
+            idx = rem_text.find(h)
+            if idx != -1:
+                next_header_indices.append(idx)
+
+        if next_header_indices:
+            end_idx = min(next_header_indices)
+            combined_signal += " " + rem_text[:end_idx]
+        else:
+            combined_signal += " " + rem_text
+    return combined_signal.strip()
+#debug
+test_words = ["audience", "principle", "practice", "require", "include"]
+for word in test_words:
+    print(f"{word}: endswith protected = {word.endswith(('ss', 'is', 'us', 'as', 'ce', 'le', 'me'))}")
+    print(f"  ends in es: {word.endswith('es')}, ends in s: {word.endswith('s')}")
