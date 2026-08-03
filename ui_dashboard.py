@@ -3,7 +3,7 @@ ui_dashboard.py
 Streamlit visualization layer
 """
 import streamlit as st
-from scoring_engine import extract_resume_text, compute_ats_metrics
+from scoring_engine import extract_resume_text, compute_ats_metrics, find_jd_headers
 
 def render_dashboard() -> None:
     st.set_page_config(layout="wide", page_title="ATS Visual Commander Dashboard")
@@ -15,6 +15,21 @@ def render_dashboard() -> None:
 
     with left_JD:
         jd_text = st.text_area("Paste your Job Description here", height=500)
+
+        selected_headers = []
+        if jd_text:
+            detected_headers = find_jd_headers(jd_text)
+            if detected_headers:
+                selected_headers = st.pills(
+                    "⚓ Select Signal Zones",
+                    options=detected_headers,
+                    selection_mode="multi",  # 다중 선택 가능
+                    default=detected_headers
+                )
+
+            else:
+                st.info("No clear headers detected. Analyzing whole text.")
+
     with right_Resume:
         resume_file = st.file_uploader("Upload your Resume here", type=["pdf", "txt"])
         st.markdown(
@@ -30,7 +45,7 @@ def render_dashboard() -> None:
 
     if jd_text and resume_file:
         resume_text = extract_resume_text(resume_file)
-        metrics = compute_ats_metrics(jd_text, resume_text)
+        metrics = compute_ats_metrics(jd_text, resume_text, selected_headers)
 
         match_score = metrics["match_score"]
         years_req = metrics["req_experience"]

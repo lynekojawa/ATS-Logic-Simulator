@@ -28,4 +28,7 @@ Scoring ENGINE - TODO LIST
 2. Header detector: pull out the header (start with this)
 3. zone tracker: will content area for header
 4. add scoring: for signal zone
-Personal comments on Gemini, they works really well from when room tokens are above 150K which is interesting. 
+Personal comments on Gemini, they works really well from when room tokens are above 150K which is interesting.
+(8/3)
+Issue resolved stemming: the singular and plural was the issue, enhacned stemming logic 
+connecting 2 ui first then if time allows move 3,4. 

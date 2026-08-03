@@ -32,10 +32,12 @@ def sanitize_text(raw_text: str) -> List[str]:
 
         if word.endswith("ies") and len(word) > 5:
             stemmed_list.append(word[:-3] + "y")
-        elif word.endswith("es") and not word.endswith("ses") and len(word) > 4:
-            stemmed_list.append(word[:-2])
         elif word.endswith("s") and not word.endswith("ss") and len(word) > 3:
-            stemmed_list.append(word[:-1])
+            candidate = word[:-1]
+            if candidate.endswith(PROTECTED_SUFFIXES) or candidate.endswith("e"):
+                stemmed_list.append(candidate)
+            else:
+                stemmed_list.append(candidate)
         else: stemmed_list.append(word)
 
     return stemmed_list
@@ -62,9 +64,14 @@ def extract_resume_text(resume_file: Any) -> str:
         return text
     return resume_file.read().decode("utf-8")
 
-def compute_ats_metrics(jd_text: str, resume_text: str) -> Dict[str, Any]:
+def compute_ats_metrics(jd_text: str, resume_text: str, selected_headers: List[str] = None) -> Dict[str, Any]:
     """Executes reverse-matching scoring logic anchored on Job Description coverage."""
-    jd_words = sanitize_text(jd_text)
+    if selected_headers:
+        analysis_target_text = extract_signal_content(jd_text, selected_headers)
+    else:
+        analysis_target_text = jd_text
+
+    jd_words = sanitize_text(analysis_target_text)
     jd_counts = Counter(jd_words)
     clean_jd_counts = Counter({k:v for k, v in jd_counts.items() if k not in STOP_WORDS})
     jd_signal = set(clean_jd_counts.keys())
@@ -96,6 +103,13 @@ def compute_ats_metrics(jd_text: str, resume_text: str) -> Dict[str, Any]:
 def find_jd_headers(raw_text: str) -> List[str]:
     lines =raw_text.split('\n')
     headers = []
+
+    CORE_ANCHORS = [
+        "DUTIES", "RESPONSIBILITIES", "TASKING", "SKILLS", "TECHNICAL SKILLS",
+        "QUALIFICATION","QUALIFICATIONS", "REQUIREMENT", "WHAT YOU WILL DO", "WHAT WE OFFER",
+        "ABOUT THE JOB", "EXPERIENCE"
+    ]
+
     header_pattern = r"^[A-Z\s]{3,}:?$|^[A-Z][a-z]+(\s[A-Z][a-z]+)*:$"
 
     for line in lines:
@@ -104,11 +118,25 @@ def find_jd_headers(raw_text: str) -> List[str]:
 
         word_count = len(clean_line.split())
         char_count = len(clean_line)
+        upper_line = clean_line.upper()
 
-        if 1<= word_count <= 6 and char_count <= 50:
-            if re.match(header_pattern, clean_line):
-                headers.append(clean_line)
+        if any(meta in clean_line for meta in ["Posted:", "Country:", "Location:", "Role Type:"]):
+            continue
+        is_header = False
+
+        if any(anchor in upper_line for anchor in CORE_ANCHORS):
+            if word_count <= 6:
+                is_header = True
+
+        if not is_header and re.match(header_pattern, clean_line):
+            if word_count <= 6:
+                is_header = True
+
+        if is_header and 1 <= word_count <= 6 and char_count <= 60:
+            headers.append(clean_line)
+
     return headers
+
 
 def extract_signal_content(raw_text: str, selected_headers: List[str]) -> str:
     if not selected_headers:
