@@ -31,4 +31,12 @@ Scoring ENGINE - TODO LIST
 Personal comments on Gemini, they works really well from when room tokens are above 150K which is interesting.
 (8/3)
 Issue resolved stemming: the singular and plural was the issue, enhacned stemming logic 
-connecting 2 ui first then if time allows move 3,4. 
+connecting 2 ui first then if time allows move 3,4.
+(8/4)
+Enhanced stemming logic, somehow I lost endswith "es", and added "sses"<br>
+Todo list: <br>
+zone tracker: will content area for header 
+add scoring: added into Ui everything looks good.
+Run diagonose with mini-Dante(faced with free tier limitation with regular dante. )
+it looks clean, I will deploy tomorrow and update readme tomorrow. maybe one last round with Dante to check. <br>
+I am in the middle of training mini-Dante, so that takes some trials and errrors and noooo fun. <br>

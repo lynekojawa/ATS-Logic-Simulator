@@ -21,7 +21,7 @@ LEGAL_NOISE = {
     "maintain", "maintained", "obtain", "obtaining", "subject", "condition",
     "conditions", "authorization", "authorized", "qualify", "qualified", "qualification",
     "qualifications", "documentation", "document", "documents", "proof", "criteria",
-    "selection", "selectee", "selected", "assessment", "assess", "review", "reviews",
+    "selectee", "selected", "assessment", "assess", "review", "reviews",
     "annual", "periodic", "duration"
 }
 

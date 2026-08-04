@@ -3,14 +3,14 @@ ui_dashboard.py
 Streamlit visualization layer
 """
 import streamlit as st
-from scoring_engine import extract_resume_text, compute_ats_metrics, find_jd_headers
+from scoring_engine import extract_resume_text, compute_ats_metrics, find_jd_headers, extract_signal_content
 
 def render_dashboard() -> None:
     st.set_page_config(layout="wide", page_title="ATS Visual Commander Dashboard")
     st.title("ATS Visual Commander Dashboard")
     st.write("ATS logic is now visual.")
 
-    topcol1, topcol2, topcol3 = st.columns(3)
+    topcol1, topcol2, topcol3, topcol4 = st.columns(4)
     left_JD, right_Resume = st.columns(2)
 
     with left_JD:
@@ -45,18 +45,33 @@ def render_dashboard() -> None:
 
     if jd_text and resume_file:
         resume_text = extract_resume_text(resume_file)
+        #this part was for diagnostic, but I liked how it looks in ui and looks more believable? so I left it.
         metrics = compute_ats_metrics(jd_text, resume_text, selected_headers)
+        if selected_headers:
+            signal_text = extract_signal_content(jd_text, selected_headers)
 
-        match_score = metrics["match_score"]
+            with st.expander("🔍 Extracted Signal Content (Internal View)"):
+                st.info(f"Analyzed Sections: {', '.join(selected_headers)}")
+                st.text_area("Extracted Meat:", value=signal_text, height=200, disabled=True)
+                st.write(f"Original Length: {len(jd_text)} chars")
+                st.write(
+                    f"Extracted Length: {len(signal_text)} chars (Reduced: {100 - (len(signal_text) / len(jd_text) * 100):.1f}%)")
+
+
+
+        overall_score = metrics["overall_score"]
+        tactical_score = metrics["tactical_score"]
         years_req = metrics["req_experience"]
         years_candidate = metrics["candidate_experience"]
         exp_delta = years_candidate - years_req
 
         with topcol1:
-            st.metric(label="Match Score", value=f"{match_score:.2f}%")
+            st.metric(label="Match Score - Overall", value=f"{overall_score:.2f}%")
         with topcol2:
-            st.metric(label="Required Experience", value=f"{years_req} yrs")
+            st.metric(label="Match Score - Signal zone", value=f"{tactical_score:.2f}%")
         with topcol3:
+            st.metric(label="Required Experience", value=f"{years_req} yrs")
+        with topcol4:
             st.metric(
                 label="Candidate Experience",
                 value=f"{years_candidate} yrs",
@@ -74,9 +89,10 @@ def render_dashboard() -> None:
         else:
             st.success("You've captured all critical keywords! Perfect match! :D")
     else:
-        topcol1.metric(label="Match Score", value="0%")
-        topcol2.metric(label="Required Experience", value="0 yrs")
-        topcol3.metric(label="Candidate Experience", value="0 yrs")
+        topcol1.metric(label="Match Score - Overall", value="0%")
+        topcol2.metric(label="Match Score - Signal Zone", value="0%")
+        topcol3.metric(label="Required Experience", value="0 yrs")
+        topcol4.metric(label="Candidate Experience", value="0 yrs")
 
 
 if __name__ == "__main__":

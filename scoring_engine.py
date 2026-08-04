@@ -5,11 +5,11 @@ Logic handling area sanitization, stemming calibration, and reverse-matching met
 
 import re
 from collections import Counter
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from pypdf import PdfReader
 from constants import STOP_WORDS, STEM_EXCLUSION, WORD_TO_NUM
 
-#updated 7/31
+#updated 8/3
 def sanitize_text(raw_text: str) -> List[str]:
     """Tokenize and applies calibrated suffix-stripping without semantic drift"""
     clean_input = raw_text.lower()
@@ -32,13 +32,24 @@ def sanitize_text(raw_text: str) -> List[str]:
 
         if word.endswith("ies") and len(word) > 5:
             stemmed_list.append(word[:-3] + "y")
-        elif word.endswith("s") and not word.endswith("ss") and len(word) > 3:
-            candidate = word[:-1]
-            if candidate.endswith(PROTECTED_SUFFIXES) or candidate.endswith("e"):
-                stemmed_list.append(candidate)
+
+        elif word.endswith("sses"):
+            stemmed_list.append(word[:-2])
+
+
+        elif word.endswith("es") and len(word) > 4:
+
+            prefix = word[:-2]
+            if prefix.endswith(("s", "x", "z", "ch", "sh")):
+                stemmed_list.append(prefix)
             else:
-                stemmed_list.append(candidate)
-        else: stemmed_list.append(word)
+                stemmed_list.append(word[:-1])
+
+        elif word.endswith("s") and not word.endswith("ss") and len(word) > 3:
+            stemmed_list.append(word[:-1])
+
+        else:
+            stemmed_list.append(word)
 
     return stemmed_list
 
@@ -64,40 +75,43 @@ def extract_resume_text(resume_file: Any) -> str:
         return text
     return resume_file.read().decode("utf-8")
 
-def compute_ats_metrics(jd_text: str, resume_text: str, selected_headers: List[str] = None) -> Dict[str, Any]:
+def compute_ats_metrics(jd_text: str, resume_text: str, selected_headers: Optional[List[str]] = None) -> Dict[str, Any]:
     """Executes reverse-matching scoring logic anchored on Job Description coverage."""
+    full_jd_words = sanitize_text(jd_text)
+    full_clean_counts = Counter(
+        {k: v for k, v in Counter(full_jd_words).items() if k not in STOP_WORDS and len(k) >= 4})
+
     if selected_headers:
         analysis_target_text = extract_signal_content(jd_text, selected_headers)
     else:
         analysis_target_text = jd_text
 
-    jd_words = sanitize_text(analysis_target_text)
-    jd_counts = Counter(jd_words)
-    clean_jd_counts = Counter({k:v for k, v in jd_counts.items() if k not in STOP_WORDS})
-    jd_signal = set(clean_jd_counts.keys())
+    signal_jd_words = sanitize_text(analysis_target_text)
+    signal_clean_counts = Counter(
+        {k: v for k, v in Counter(signal_jd_words).items() if k not in STOP_WORDS and len(k) >= 4})
 
-    resume_words = sanitize_text(resume_text)
-    resume_signal = set(Counter(resume_words).keys())
+    resume_signal = set(Counter(sanitize_text(resume_text)).keys())
 
-    matched_keywords = jd_signal & resume_signal
-    missing_keywords = jd_signal - matched_keywords
+    def get_score(jd_counts, res_set):
+        if not jd_counts: return 0.0
+        jd_set = set(jd_counts.keys())
+        matched = jd_set & res_set
+        return (sum(jd_counts[w] for w in matched) / sum(jd_counts.values())) * 100
 
-    total_weight = sum(clean_jd_counts.values())
-    match_weight = sum(clean_jd_counts[word] for word in matched_keywords)
+    overall_score = get_score(full_clean_counts, resume_signal)
+    tactical_score = get_score(signal_clean_counts, resume_signal)
 
-    match_score = (match_weight / total_weight) * 100 if jd_signal else 0.0
-
-    high_value_missing = sorted(
-        missing_keywords,
-        key = lambda x: clean_jd_counts[x],
-        reverse=True
-    )[:50]
+    missing_keywords = sorted(set(signal_clean_counts.keys()) - resume_signal,
+                              key=lambda x: signal_clean_counts[x],
+                              reverse=True)[:50]
 
     return {
-        "match_score": match_score,
+        "overall_score": overall_score,
+        "tactical_score": tactical_score,
         "req_experience": extract_experience(jd_text),
         "candidate_experience": extract_experience(resume_text),
-        "missing_keywords": high_value_missing
+        "missing_keywords": missing_keywords,
+        "signal_text": analysis_target_text
     }
 #added 7/31
 def find_jd_headers(raw_text: str) -> List[str]:
@@ -132,7 +146,7 @@ def find_jd_headers(raw_text: str) -> List[str]:
             if word_count <= 6:
                 is_header = True
 
-        if is_header and 1 <= word_count <= 6 and char_count <= 60:
+        if is_header and char_count <= 60:
             headers.append(clean_line)
 
     return headers
@@ -143,28 +157,32 @@ def extract_signal_content(raw_text: str, selected_headers: List[str]) -> str:
         return raw_text
 
     all_headers = find_jd_headers(raw_text)
+    header_positions = []
+
+    for h in all_headers:
+        for match in re.finditer(r'(?:^|\n)' +re.escape(h), raw_text):
+            start_idx = match.start()
+            if raw_text[start_idx] == '\n':
+                start_idx += 1
+            header_positions.append((start_idx, h))
+            break
+
+    header_positions.sort()
+
     combined_signal = ""
 
     for target in selected_headers:
-        start_idx = raw_text.find(target)
-        if start_idx == -1: continue
+        try:
+            current_idx = next(i for i, pos in enumerate(header_positions) if pos[1] == target)
+            start_pos, _ = header_positions[current_idx]
 
-        content_start = start_idx + len(target)
-        rem_text = raw_text[content_start:]
-        next_header_indices = []
-        for h in all_headers:
-            idx = rem_text.find(h)
-            if idx != -1:
-                next_header_indices.append(idx)
+            if current_idx + 1 < len(header_positions):
+                end_pos, _ = header_positions[current_idx +1]
+            else:
+                end_pos = len(raw_text)
 
-        if next_header_indices:
-            end_idx = min(next_header_indices)
-            combined_signal += " " + rem_text[:end_idx]
-        else:
-            combined_signal += " " + rem_text
+            content = raw_text[start_pos +len(target): end_pos].strip()
+            combined_signal += " " + content
+        except StopIteration:
+            continue
     return combined_signal.strip()
-#debug
-test_words = ["audience", "principle", "practice", "require", "include"]
-for word in test_words:
-    print(f"{word}: endswith protected = {word.endswith(('ss', 'is', 'us', 'as', 'ce', 'le', 'me'))}")
-    print(f"  ends in es: {word.endswith('es')}, ends in s: {word.endswith('s')}")
